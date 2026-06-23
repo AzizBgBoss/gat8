@@ -497,12 +497,13 @@ function set_notice(text, length)
 end
 -->8
 function draw_menu()
+    print("❎: select, 🅾️: exit", 0,0,7)
     for i = 1, #menus[active_menu] do
         local m = menus[active_menu][i]
         if m.title then
-            print(((i == menu_choice) and "> " or "  ") .. m.title, 0, i * 6, 7)
+            print(((i == menu_choice) and "> " or "  ") .. m.title, 0, i * 6 + 8, 7)
         elseif m.get_title then
-            print(((i == menu_choice) and "> " or "  ") .. m.get_title(), 0, i * 6, 7)
+            print(((i == menu_choice) and "> " or "  ") .. m.get_title(), 0, i * 6 + 8, 7)
         end
     end
     if menus[active_menu][menu_choice].desc then

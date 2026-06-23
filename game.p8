@@ -13,15 +13,20 @@ function _update60()
             game_title = false
         end
     elseif active_menu then
-        if menu_choice < 1 then
-            menu_choice = #menus[active_menu]
-        elseif menu_choice > #menus[active_menu] then
-            menu_choice = 1
-        end
         if btnp(2) then
             menu_choice -= 1
+            if menu_choice < 1 then
+                menu_choice = #menus[active_menu]
+            elseif menu_choice > #menus[active_menu] then
+                menu_choice = 1
+            end
         elseif btnp(3) then
             menu_choice += 1
+            if menu_choice < 1 then
+                menu_choice = #menus[active_menu]
+            elseif menu_choice > #menus[active_menu] then
+                menu_choice = 1
+            end
         elseif btnp(5) then
             menus[active_menu][menu_choice].func()
         elseif btnp(4) then
@@ -197,7 +202,13 @@ menus = {
     {
         {
             get_title = function() return "aiming: " .. (options.aiming and "on" or "off") end,
-            desc = "on: keep showing the trajectory.\noff: only show it for 5 seconds after you shoot then allow auto-guiding.",
+            get_desc = function()
+                if options.aiming then
+                    return "always show the aiming trajectory, diables auto-guiding"
+                else
+                    return "show the aiming trajectory for 5 seconds after you shoot then re-enables auto-guiding"
+                end
+            end,
             func = function() options.aiming = not options.aiming end
         },
         {
@@ -212,7 +223,13 @@ menus = {
     {
         {
             get_title = function() return "debug: " .. (options.debug and "on" or "off") end,
-            desc = "on: show debug info.\noff: hide debug info.",
+            get_desc = function()
+                if options.debug then
+                    return "show debug info"
+                else
+                    return "hide debug info"
+                end
+            end,
             func = function() options.debug = not options.debug end
         }
     }
@@ -447,7 +464,24 @@ function printw(text, x, y, color, limit)
     for i = 1, #text do
         local char = sub(text, i, i)
 
-        if cur_x + 4 > limit or char == "\n" then
+        local word_too_long = false
+        local word = ""
+        for j = i, #text do
+            local char2 = sub(text, j, j)
+            if char2 == " " then
+                break
+            end
+            word = word .. char2
+            if #word * 4 > limit - x then
+                word_too_long = false -- just split the word
+                break
+            elseif #word * 4 > limit - cur_x then
+                word_too_long = true
+                break
+            end
+        end
+
+        if cur_x + 4 > limit or char == "\n" or word_too_long then
             cur_x = x
             cur_y += 6
         end
@@ -474,6 +508,9 @@ function draw_menu()
     if menus[active_menu][menu_choice].desc then
         rect(0, screen_height - 4 * 6 - 2, screen_width - 1, screen_height, 1)
         printw(menus[active_menu][menu_choice].desc, 2, screen_height - 4 * 6, 7, screen_width - 2)
+    elseif menus[active_menu][menu_choice].get_desc then
+        rect(0, screen_height - 4 * 6 - 2, screen_width - 1, screen_height, 1)
+        printw(menus[active_menu][menu_choice].get_desc(), 2, screen_height - 4 * 6, 7, screen_width - 2)
     end
 end
 

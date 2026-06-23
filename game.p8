@@ -12,61 +12,78 @@ function _update60()
         if btnp(5) then
             game_title = false
         end
+    elseif active_menu then
+        if menu_choice < 1 then
+            menu_choice = #menus[active_menu]
+        elseif menu_choice > #menus[active_menu] then
+            menu_choice = 1
+        end
+        if btnp(2) then
+            menu_choice -= 1
+        elseif btnp(3) then
+            menu_choice += 1
+        elseif btnp(5) then
+            menus[active_menu][menu_choice].func()
+        elseif btnp(4) then
+            active_menu = nil
+        end
     else
-        trail = false
         local started_mission = false
         if not convo_active then
-        if btn(0) then
-            player.angle -= 0.1
-        elseif btn(1) then
-            player.angle += 0.1
-        end
+            if btn(0) then
+                player.angle -= 0.1
+            elseif btn(1) then
+                player.angle += 0.1
+            end
 
-        if btn(2) then
-            if player.speed == 0 then
-                player.speed = 0.05
+            if btn(2) then
+                if player.speed == 0 then
+                    player.speed = 0.05
+                else
+                    player.speed *= 1.05
+                end
+
+                if btn(4) then
+                    -- sprint
+                    if iswet(flr((player.x + 4) / tile_size), flr((player.y + 4) / tile_size)) then
+                        player.speedcap = 0.5
+                    else
+                        player.speedcap = 1
+                    end
+                else
+                    if iswet(flr((player.x + 4) / tile_size), flr((player.y + 4) / tile_size)) then
+                        player.speedcap = 0.3
+                    else
+                        player.speedcap = 0.5
+                    end
+                end
+
+                if player.speed > player.speedcap then
+                    player.speed = player.speedcap
+                end
+
+                -- Only auto-align if the player isn't actively turning or shooting
+                if not btn(0) and not btn(1) and not trail then
+                    local target = round(player.angle % 8) % 8
+                    local diff = ((target - player.angle + 4) % 8) - 4
+
+                    if abs(diff) > 0.05 then
+                        player.angle += sgn(diff) * 0.01
+                    else
+                        player.angle = target
+                    end
+                end
+            elseif btn(3) then
+                player.speed = -0.2
             else
-                player.speed *= 1.05
-            end
-
-            if btn(4) then -- sprint
-                if iswet(flr((player.x + 4) / tile_size), flr((player.y + 4) / tile_size)) then
-                    player.speedcap = 0.5
-                else
-                    player.speedcap = 1
-                end
-            else
-                if iswet(flr((player.x + 4) / tile_size), flr((player.y + 4) / tile_size)) then
-                    player.speedcap = 0.3
-                else
-                    player.speedcap = 0.5
+                player.speed = 0
+                if btnp(4) then
+                    active_menu = 1
                 end
             end
 
-            if player.speed > player.speedcap then
-                player.speed = player.speedcap
-            end
-
-            -- Only auto-align if the player isn't actively turning or shooting
-            if not btn(0) and not btn(1) and time() - lastshot > 5 then
-                local target = round(player.angle % 8) % 8
-                local diff = ((target - player.angle + 4) % 8) - 4
-
-                if abs(diff) > 0.05 then
-                    player.angle += sgn(diff) * 0.01
-                else
-                    player.angle = target
-                end
-            end
-
-        elseif btn(3) then
-            player.speed = -0.2
-        else
-            player.speed = 0
-        end
-
-        move_player()
-        update_mission_id()
+            move_player()
+            update_mission_id()
         end
 
         if btnp(5) then
@@ -87,7 +104,8 @@ function _update60()
                     convo_active = true
                     convo_mission_id = talk_id
                     convo_i = 1
-                else -- pew pew
+                else
+                    -- pew pew
                     if player.ammo > 0 then
                         player.ammo -= 1
                         spawn_bullet()
@@ -105,10 +123,13 @@ function _update60()
             end
         end
 
-        if time() - lastshot < 5 then -- show trajectory
+        if time() - lastshot < 5 or options.aiming then
+            -- show trajectory
             if player.ammo > 0 then
                 trail = true
             end
+        else
+            trail = false
         end
 
         move_projectiles()
@@ -130,6 +151,8 @@ function _draw()
         print("press ❎ to start", 0, 120, 7)
     elseif convo_active then
         draw_convo()
+    elseif active_menu then
+        draw_menu()
     else
         draw_map()
         draw_player()
@@ -142,7 +165,9 @@ function _draw()
 
         show_notices()
         show_stats()
-        show_debug()
+        if options.debug then
+            show_debug()
+        end
     end
 end
 
@@ -153,6 +178,49 @@ tile_size = 8
 
 scrollx, scrolly = 0, 0
 
+options = {
+    aiming = false,
+    debug = false
+}
+
+menus = {
+    {
+        {
+            title = "options",
+            desc = "show gameplay options",
+            func = function()
+                active_menu = 2
+                menu_choice = 1
+            end
+        }
+    },
+    {
+        {
+            get_title = function() return "aiming: " .. (options.aiming and "on" or "off") end,
+            desc = "on: keep showing the trajectory.\noff: only show it for 5 seconds after you shoot then allow auto-guiding.",
+            func = function() options.aiming = not options.aiming end
+        },
+        {
+            title = "advanced",
+            desc = "show advanced options",
+            func = function()
+                active_menu = 3
+                menu_choice = 1
+            end
+        }
+    },
+    {
+        {
+            get_title = function() return "debug: " .. (options.debug and "on" or "off") end,
+            desc = "on: show debug info.\noff: hide debug info.",
+            func = function() options.debug = not options.debug end
+        }
+    }
+}
+
+active_menu = nil
+menu_choice = 1
+
 game_title = true
 
 trail = false
@@ -161,31 +229,34 @@ lastshot = 0
 notice = nil
 noticetime = 0
 
+button_notice = nil
+
 active_mission = nil
 mission_id = nil
 convo_active = false
 convo_mission_id = nil
 convo_i = 1
 missions = {
-    {x = 8*15, y = 8*5, sprite = 54, name = "a deal with the devil...",
+    {
+        x = 8 * 15, y = 8 * 5, sprite = 54, name = "a deal with the devil...",
         convo = {
-            {194, "こんにちは..."},
-            {192, "what?"},
-            {194, "あなたのおちん-"}, 
-            {192, "what the fuck?"},
-            {194, "jeremy, i am master ken-lee, i need you to kill slippy, the leader of the most dangerous gang in chinatown..."}, 
-            {192, "bro why the hell would i do that?"}, 
-            {194, "because we need to take over chinatown and make it japantown... and also because i can't come up with a good story for the game so will start from here"},
-            {192, "ok old man, arigato later."},
-            {194, "you mean さようなら?"},
-            {192, "shut your bitch ass up."}
+            { 194, "こんにちは..." },
+            { 192, "what?" },
+            { 194, "あなたのおちん-" },
+            { 192, "what the fuck?" },
+            { 194, "jeremy, i am master ken-lee, i need you to kill slippy, the leader of the most dangerous gang in chinatown..." },
+            { 192, "bro why the hell would i do that?" },
+            { 194, "because we need to take over chinatown and make it japantown... and also because i can't come up with a good story for the game so will start from here" },
+            { 192, "ok old man, arigato later." },
+            { 194, "you mean さようなら?" },
+            { 192, "shut your bitch ass up." }
         },
-        on_start = function ()
+        on_start = function()
             set_notice("mission: find slippy and kill him! +120●")
             player.ammo += 120
             spawn_npc("slippy")
         end,
-        to_end = function ()
+        to_end = function()
             for i = 1, #npcs do
                 if npcs[i].name == "slippy" and npcs[i].health <= 0 then
                     return true
@@ -193,95 +264,98 @@ missions = {
             end
             return false
         end,
-        on_end = function ()
+        on_end = function()
             set_notice("mission complete! +100$")
             player.money += 100
         end
     },
-    {x = 8*15, y = 8*5, sprite = 54, name = "the next operation...", missions_needed = {1},
+    {
+        x = 8 * 15, y = 8 * 5, sprite = 54, name = "the next operation...", missions_needed = { 1 },
         convo = {
-            {194, "hello again..."},
-            {192, "that was some crazy shit, old man. now would you consider fucking off?"},
-            {194, "i am a man of honor, i will not."},
-            {192, "what the fuck does honor have to do with this?"},
-            {194, "i am a man of honor, i will not."},
-            {192, "what the hell is wrong with you, ken-lee?"},
-            {194, "i am a man of honor, i will not."},
-            {224, "shut the fuck up! (punches ken-lee in the face)"},
-            {226, "(ken-lee's face breaks and reveals a motherboard)"},
-            {192, "what the fuck? ken-lee you a robot?"},
-            {226, "sorry, as an ai agent, i cannot fullfill your request."},
-            {192, "man this is fucked up, i killed a person just for a robot?"},
-            {192, "(jeremy notices a tag inside ken-lee's head)"},
-            {196, "agent: ken-lee\nmodel: chad-gpt\ncompany: closedai"},
-            {192, "closedai... i think i know where this company is located. i better check out what the fuck i signed up for..."},
-            {224, "(jeremy destroys the robot for good)"},
+            { 194, "hello again..." },
+            { 192, "that was some crazy shit, old man. now would you consider fucking off?" },
+            { 194, "i am a man of honor, i will not." },
+            { 192, "what the fuck does honor have to do with this?" },
+            { 194, "i am a man of honor, i will not." },
+            { 192, "what the hell is wrong with you, ken-lee?" },
+            { 194, "i am a man of honor, i will not." },
+            { 224, "shut the fuck up! (punches ken-lee in the face)" },
+            { 226, "(ken-lee's face breaks and reveals a motherboard)" },
+            { 192, "what the fuck? ken-lee you a robot?" },
+            { 226, "sorry, as an ai agent, i cannot fullfill your request." },
+            { 192, "man this is fucked up, i killed a person just for a robot?" },
+            { 192, "(jeremy notices a tag inside ken-lee's head)" },
+            { 196, "agent: ken-lee\nmodel: chad-gpt\ncompany: closedai" },
+            { 192, "closedai... i think i know where this company is located. i better check out what the fuck i signed up for..." },
+            { 224, "(jeremy destroys the robot for good)" }
         },
-        to_end = function ()
+        to_end = function()
             return true
         end,
-        on_end = function ()
+        on_end = function()
             set_notice("find the closedai HQ to proceed!")
         end
     },
-    {x = 8*23 + 4, y = 6*8, sprite = 55, name = "a fortunate aquaintace", missions_needed = {2},
+    {
+        x = 8 * 23 + 4, y = 6 * 8, sprite = 55, name = "a fortunate aquaintace", missions_needed = { 2 },
         convo = {
-            {196, "(jeremy reads the sign on the building)\n\nclosedai headquarters\nemail: closedai@closed.ai\nif you have any complaint, feel free to shove it up your-"},
-            {196, "(a loud scream interrupts jeremy's reading)"},
-            {228, "open the fucking door you bitches!"},
-            {230, "sir, please leave us alone or i'll call security!"},
-            {228, "fuck you and your security! i am the mighty ken-lao and i'm here to avenge my brother!"},
-            {228, "i have decades of experience in kung-fu! i'll fuck all of you up! or even better, an ak-47 might do the job!"},
-            {192, "ken-lao? this sounds familiar..."},
-            {192, "avenge your brother? is your brother's name by any chance ken-lee?"},
-            {228, "what? yes, yes! how do you know my brother? how could you have seen him when he was dead for 2 years?"},
-            {192, "bro, your brother is a fucking robot! he made me kill someone named slippy who's the leader of the most professional gang in chinatown!"},
-            {228, "those bitches, they turned my brother's body to a robot!"},
-            {192, "what? oh my god, that's horrible! but don't worry, he still wanted to make japantown."},
-            {228, "what japantown are you talking about? stop it with these rumors! we don't want to attack chinatown, it's too useless. also, this slippy guy, is not even a chinese person's name!"},
-            {192, "then who might this slippy be?"},
-            {228, "i don't know, but what i know is that i'm going to kill everybody in this fuckass building!"},
+            { 196, "(jeremy reads the sign on the building)\n\nclosedai headquarters\nemail: closedai@closed.ai\nif you have any complaint, feel free to shove it up your-" },
+            { 196, "(a loud scream interrupts jeremy's reading)" },
+            { 228, "open the fucking door you bitches!" },
+            { 230, "sir, please leave us alone or i'll call security!" },
+            { 228, "fuck you and your security! i am the mighty ken-lao and i'm here to avenge my brother!" },
+            { 228, "i have decades of experience in kung-fu! i'll fuck all of you up! or even better, an ak-47 might do the job!" },
+            { 192, "ken-lao? this sounds familiar..." },
+            { 192, "avenge your brother? is your brother's name by any chance ken-lee?" },
+            { 228, "what? yes, yes! how do you know my brother? how could you have seen him when he was dead for 2 years?" },
+            { 192, "bro, your brother is a fucking robot! he made me kill someone named slippy who's the leader of the most professional gang in chinatown!" },
+            { 228, "those bitches, they turned my brother's body to a robot!" },
+            { 192, "what? oh my god, that's horrible! but don't worry, he still wanted to make japantown." },
+            { 228, "what japantown are you talking about? stop it with these rumors! we don't want to attack chinatown, it's too useless. also, this slippy guy, is not even a chinese person's name!" },
+            { 192, "then who might this slippy be?" },
+            { 228, "i don't know, but what i know is that i'm going to kill everybody in this fuckass building!" }
         },
-        to_end = function ()
+        to_end = function()
             return true
         end,
-        on_end = function ()
+        on_end = function()
             set_notice("do more investigations to proceed!")
         end
     },
-    {x = 8*2, y = 8*2, sprite = 56, name = "sloppy", missions_needed = {3},
+    {
+        x = 8 * 2, y = 8 * 2, sprite = 56, name = "sloppy", missions_needed = { 3 },
         convo = {
-            {198, "hey..."},
-            {192, "yo? what's up with your face? why the fuck is the whole city filled with robots now?"},
-            {198, "it's a long story... why do you care?"},
-            {192, "*mumbles* well i bet it's related to closedai..."},
-            {198, "wait, what did you say? closedai? what do you know about it?"},
-            {192, "well i know for sure that they're some fucked up company, but i still don't know much about them... all i know is that they turned a poor japanese uncle to a robot, but i don't know why..."},
-            {198, "they did the same with me..."},
-            {192, "really? why?"},
-            {198, "let me tell you... closedai is a company that like many others specializes in making artificial intelligence..."},
-            {198, "many people lost their jobs because of ai, but closedai is still greedy. so they decided to make humanoid robots to steal more jobs that require human physicality and to infilitrate them to collect more data..."},
-            {198, "i was one of the victims that lost their job to ai... one day they came up to me and offered a huge sum of money to give up my body once i died..."},
-            {192, "what? why you? and why give money to a dead person?"},
-            {198, "well... my salary is the only thing that was feeding my family... the money was too much to turn down. plus... they knew i had a terminal sickness and didn't have much time left..."},
-            {198, "i died of terminal sickness 5 years ago. i was their first volunteer for this project, but midway through the project they ditched me, like this, incomplete."},
-            {192, "and why is that? and how are you alive now?"},
-            {198, "mid-procedure, they noticed that unlike what they wanted, i got my own conciousness back. i wasn't controllable like the robots they want."},
-            {198, "my real name is donatello, but they named me sloppy because, i was a sloppy project. they started working on me 1 hour after i died, if they were any more late, i would've lost all of my memories"},
-            {198, "this is not being alive, this is being tortured, i wanted to die in peace, not like this..."},
-            {198, "but the good thing is my brain is still connected to their servers, they don't know it... i'm waiting for the perfect opportunity to crack their security and control their new robots to destroy their image, and company..."},
-            {198, "don't worry jeremy..."},
-            {192, "what? how do you know my name?"},
-            {198, "i was connected to ken-lee, i saw you kill my brother slippy, he was also a failed experiment of closedai but at least his body was complete. they tricked you to kill them because they knew he was alive, but they don't know that i am alive too..."},
-            {192, "i'm so fucking sorry, bro. listen, ken-lao is ken-lee's brother, we might be able to stop them if we help each other."},
-            {198, "ok... we'll talk later..."},
-            {192, "by the way, if slippy was a robot, why did he bleed when i killed him?"},
-            {198, "i got too lazy programming the game that i don't want to make another sprite for slippy..."},
+            { 198, "hey..." },
+            { 192, "yo? what's up with your face? why the fuck is the whole city filled with robots now?" },
+            { 198, "it's a long story... why do you care?" },
+            { 192, "*mumbles* well i bet it's related to closedai..." },
+            { 198, "wait, what did you say? closedai? what do you know about it?" },
+            { 192, "well i know for sure that they're some fucked up company, but i still don't know much about them... all i know is that they turned a poor japanese uncle to a robot, but i don't know why..." },
+            { 198, "they did the same with me..." },
+            { 192, "really? why?" },
+            { 198, "let me tell you... closedai is a company that like many others specializes in making artificial intelligence..." },
+            { 198, "many people lost their jobs because of ai, but closedai is still greedy. so they decided to make humanoid robots to steal more jobs that require human physicality and to infilitrate them to collect more data..." },
+            { 198, "i was one of the victims that lost their job to ai... one day they came up to me and offered a huge sum of money to give up my body once i died..." },
+            { 192, "what? why you? and why give money to a dead person?" },
+            { 198, "well... my salary is the only thing that was feeding my family... the money was too much to turn down. plus... they knew i had a terminal sickness and didn't have much time left..." },
+            { 198, "i died of terminal sickness 5 years ago. i was their first volunteer for this project, but midway through the project they ditched me, like this, incomplete." },
+            { 192, "and why is that? and how are you alive now?" },
+            { 198, "mid-procedure, they noticed that unlike what they wanted, i got my own conciousness back. i wasn't controllable like the robots they want." },
+            { 198, "my real name is donatello, but they named me sloppy because, i was a sloppy project. they started working on me 1 hour after i died, if they were any more late, i would've lost all of my memories" },
+            { 198, "this is not being alive, this is being tortured, i wanted to die in peace, not like this..." },
+            { 198, "but the good thing is my brain is still connected to their servers, they don't know it... i'm waiting for the perfect opportunity to crack their security and control their new robots to destroy their image, and company..." },
+            { 198, "don't worry jeremy..." },
+            { 192, "what? how do you know my name?" },
+            { 198, "i was connected to ken-lee, i saw you kill my brother slippy, he was also a failed experiment of closedai but at least his body was complete. they tricked you to kill them because they knew he was alive, but they don't know that i am alive too..." },
+            { 192, "i'm so fucking sorry, bro. listen, ken-lao is ken-lee's brother, we might be able to stop them if we help each other." },
+            { 198, "ok... we'll talk later..." },
+            { 192, "by the way, if slippy was a robot, why did he bleed when i killed him?" },
+            { 198, "i got too lazy programming the game that i don't want to make another sprite for slippy..." }
         },
-        to_end = function ()
+        to_end = function()
             return true
         end,
-        on_end = function ()
+        on_end = function()
             set_notice("look for more leads to proceed!")
         end
     }
@@ -306,9 +380,9 @@ player = {
     money = 500
 }
 
-player_directions = {0x07, 0x08, 0x18, 0x28, 0x27, 0x26, 0x16, 0x06, 0x17}
+player_directions = { 0x07, 0x08, 0x18, 0x28, 0x27, 0x26, 0x16, 0x06, 0x17 }
 
-npc_palette = {{4, {4, 5, 6}}, {15, {15, 4}}, {11, {1, 11, 4, 5, 12}}, {9, {1, 2, 5, 6, 7, 8, 9, 10, 12, 13, 14}}}
+npc_palette = { { 4, { 4, 5, 6 } }, { 15, { 15, 4 } }, { 11, { 1, 11, 4, 5, 12 } }, { 9, { 1, 2, 5, 6, 7, 8, 9, 10, 12, 13, 14 } } }
 
 -->8
 function mapget(x, y)
@@ -332,9 +406,9 @@ end
 
 function rectsolid(x, y, w, h)
     return solid_at(x, y)
-        or solid_at(x + w - 1, y)
-        or solid_at(x, y + h - 1)
-        or solid_at(x + w - 1, y + h - 1)
+            or solid_at(x + w - 1, y)
+            or solid_at(x, y + h - 1)
+            or solid_at(x + w - 1, y + h - 1)
 end
 
 function checknpc(x, y)
@@ -346,7 +420,7 @@ function checknpc(x, y)
     return nil
 end
 
-function isinrange(x,y,r)
+function isinrange(x, y, r)
     r = r or 1
     local range = r * 8
     local dx = player.x + 4 - x
@@ -369,15 +443,15 @@ function printw(text, x, y, color, limit)
     limit = limit or screen_width
     local cur_x = x
     local cur_y = y
-    
+
     for i = 1, #text do
         local char = sub(text, i, i)
-        
+
         if cur_x + 4 > limit or char == "\n" then
             cur_x = x
-            cur_y += 6 
+            cur_y += 6
         end
-        
+
         cur_x = print(char, cur_x, cur_y, color)
     end
 end
@@ -388,6 +462,21 @@ function set_notice(text, length)
     noticetime = time() + length
 end
 -->8
+function draw_menu()
+    for i = 1, #menus[active_menu] do
+        local m = menus[active_menu][i]
+        if m.title then
+            print(((i == menu_choice) and "> " or "  ") .. m.title, 0, i * 6, 7)
+        elseif m.get_title then
+            print(((i == menu_choice) and "> " or "  ") .. m.get_title(), 0, i * 6, 7)
+        end
+    end
+    if menus[active_menu][menu_choice].desc then
+        rect(0, screen_height - 4 * 6 - 2, screen_width - 1, screen_height, 1)
+        printw(menus[active_menu][menu_choice].desc, 2, screen_height - 4 * 6, 7, screen_width - 2)
+    end
+end
+
 function check_missions()
     if active_mission then
         if missions[active_mission].to_end() or missions[active_mission].complete then
@@ -463,7 +552,7 @@ function draw_missions()
 end
 
 function drop_item(x, y, sprite, on_pickup)
-    add(items, {x = x, y = y, sprite = sprite, on_pickup = on_pickup})
+    add(items, { x = x, y = y, sprite = sprite, on_pickup = on_pickup })
 end
 
 function draw_items()
@@ -480,11 +569,11 @@ function spawn_npc(name, pal, x, y, dir, health, speed)
             x, y = testx * tile_size, testy * tile_size
         end
     end
-    pal = pal or {npc_palette[1][2][rand(#npc_palette[1][2])+1], npc_palette[2][2][rand(#npc_palette[2][2])+1], npc_palette[3][2][rand(#npc_palette[3][2])+1], npc_palette[4][2][rand(#npc_palette[4][2])+1]}
+    pal = pal or { npc_palette[1][2][rand(#npc_palette[1][2]) + 1], npc_palette[2][2][rand(#npc_palette[2][2]) + 1], npc_palette[3][2][rand(#npc_palette[3][2]) + 1], npc_palette[4][2][rand(#npc_palette[4][2]) + 1] }
     dir = dir or rand(8)
     health = health or 20
     speed = speed or 0.3
-    add(npcs, {x = x, y = y, sprite = sprite, dir = rand(8), health = health, speed = speed, name = name, pal = pal})
+    add(npcs, { x = x, y = y, sprite = sprite, dir = rand(8), health = health, speed = speed, name = name, pal = pal })
 end
 
 function iswet(x, y)
@@ -492,8 +581,8 @@ function iswet(x, y)
 end
 
 function is_legal(x, y)
-    if x < 0 or x >= map_width or y < 0 or y >= map_height then 
-        return false 
+    if x < 0 or x >= map_width or y < 0 or y >= map_height then
+        return false
     end
     return fget(mget(x, y), 1)
 end
@@ -511,30 +600,30 @@ function backtrack(visited, target)
             return prev.x, prev.y
         end
         prev = curr
-        curr = {x = curr.x - dir.x, y = curr.y - dir.y}
+        curr = { x = curr.x - dir.x, y = curr.y - dir.y }
     end
 end
 
 function get_next_step(start_x, start_y, target_x, target_y)
-    local queue = {{x=start_x, y=start_y}}
+    local queue = { { x = start_x, y = start_y } }
     local visited = {}
-    visited[start_y * map_width + start_x] = {x=0, y=0}
+    visited[start_y * map_width + start_x] = { x = 0, y = 0 }
     local q_idx = 1
- 
+
     while q_idx <= #queue do
         local curr = queue[q_idx]
         q_idx += 1
-  
+
         if curr.x == target_x and curr.y == target_y then
             return backtrack(visited, curr)
         end
-  
-        for d in all({{0,1},{0,-1},{1,0},{-1,0}, {1,1}, {1,-1}, {-1,1}, {-1,-1}}) do
+
+        for d in all({ { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } }) do
             local dx, dy = d[1], d[2]
             local nx, ny = curr.x + dx, curr.y + dy
             if is_legal(nx, ny) and not visited[ny * map_width + nx] then
-            visited[ny * map_width + nx] = {x=dx, y=dy}
-            add(queue, {x=nx, y=ny})
+                visited[ny * map_width + nx] = { x = dx, y = dy }
+                add(queue, { x = nx, y = ny })
             end
         end
     end
@@ -631,7 +720,7 @@ end
 function add_particle(x, y, color, velx, vely)
     velx = velx or rnd(1)
     vely = vely or rnd(1)
-    add(particles, {x = x, y = y, color = color, velx = velx, vely = vely, time = time(), slowdown = 0.9})
+    add(particles, { x = x, y = y, color = color, velx = velx, vely = vely, time = time(), slowdown = 0.9 })
 end
 
 function move_particles()
@@ -687,7 +776,7 @@ function spawn_bullet(x, y, angle, speed, damage)
     angle = angle or player.angle
     speed = speed or 2
     damage = damage or 5
-    add(projectiles, {x = x, y = y, angle = angle, speed = speed, damage = damage})
+    add(projectiles, { x = x, y = y, angle = angle, speed = speed, damage = damage })
 end
 
 function move_projectiles()
@@ -709,7 +798,8 @@ function draw_projectiles()
     for i = 1, #projectiles do
         local p = projectiles[i]
         local dx, dy = cos(-p.angle / 8 + 0.25) * p.speed, sin(-p.angle / 8 + 0.25) * p.speed
-        for j = 1, 4 do -- trail
+        for j = 1, 4 do
+            -- trail
             pset(p.x - scrollx - dx * j, p.y - scrolly - dy * j, 6)
         end
         pset(p.x - scrollx, p.y - scrolly, 0)
@@ -776,7 +866,7 @@ function show_debug()
     print("y: " .. player.y .. "(" .. flr(player.y / 8) .. "*8)")
     for i = 1, #npcs do
         if npcs[i].target and npcs[i].next_step then
-            print("npc" .. i .. "♥" .. npcs[i].health .. "T" .. npcs[i].target[1]..","..npcs[i].target[2] .. "N" .. npcs[i].next_step[1]..","..npcs[i].next_step[2])
+            print("npc" .. i .. "♥" .. npcs[i].health .. "T" .. npcs[i].target[1] .. "," .. npcs[i].target[2] .. "N" .. npcs[i].next_step[1] .. "," .. npcs[i].next_step[2])
         else
             print("npc" .. i .. "♥" .. npcs[i].health)
         end
@@ -784,18 +874,31 @@ function show_debug()
 end
 
 function show_notices()
+    button_notice = nil
     if mission_id then
         local sx, sy = missions[mission_id].x - scrollx - #missions[mission_id].name * 2 + 4, missions[mission_id].y - scrolly - 8
         rectfill(sx - 1, sy - 1, sx + #missions[mission_id].name * 4 - 1, sy + 5, 1)
         print(missions[mission_id].name, sx, sy, 7)
+        button_notice = { "❎", "interact" }
     end
     if notice then
-        rect(1,1,screen_width - 2, 13, 7)
-        rectfill(2,2,screen_width - 3, 12, 0)
+        rect(1, 1, screen_width - 2, 13, 7)
+        rectfill(2, 2, screen_width - 3, 12, 0)
         printw(notice, 2, 2, 7, screen_width - 3)
         if time() - noticetime > 0 then
             notice = nil
         end
+    end
+    if button_notice then
+        local lastx = 67 --lol
+        rectfill(0, 0, screen_width, 6, 1)
+        if time() % 2 < 1 then
+            lastx = print(button_notice[1], 1, 1, 7)
+        else
+            print(button_notice[1], 1, 1, 6)
+            lastx = print(button_notice[1], 1, 0, 7)
+        end
+        print(button_notice[2], lastx + 4, 1, 7)
     end
 end
 

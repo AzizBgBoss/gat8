@@ -393,7 +393,7 @@ missions = {
             { 192, "i'm so fucking sorry, bro. listen, ken-lao is ken-lee's brother, we might be able to stop them if we help each other." },
             { 198, "ok... we'll talk later..." },
             { 192, "by the way, if slippy was a robot, why did he bleed when i killed him?" },
-            { 198, "i got too lazy programming the game that i don't want to make another sprite for slippy..." }
+            { 198, "i got too lazy programming the game that i don't want to make another sprite for slippy so i just used an npc sprite..." }
         },
         to_end = function()
             return true

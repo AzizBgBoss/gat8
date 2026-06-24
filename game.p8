@@ -2,15 +2,20 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 function _init()
-    for i = 1, 16 do
+    for i = 1, 4 do
         spawn_npc()
     end
+    cartdata("gat8azizbgboss")
 end
 
 function _update60()
     if game_title then
         if btnp(5) then
             game_title = false
+        end
+    elseif alert then
+        if btnp(5) and time() - alert_time > 1 then
+            alert = nil
         end
     elseif active_menu then
         if btnp(2) then
@@ -154,6 +159,8 @@ function _draw()
         print("made by azizbgboss", 0, 8, 7)
         printw("github.com/azizbgboss/gat8", 0, 16, 7)
         print("press ❎ to start", 0, 120, 7)
+    elseif alert then
+        draw_alert()
     elseif convo_active then
         draw_convo()
     elseif active_menu then
@@ -190,6 +197,20 @@ options = {
 
 menus = {
     {
+        {
+            title = "save game",
+            desc = "save your progress for later sessions",
+            func = function()
+                save_game()
+            end
+        },
+        {
+            title = "load game",
+            desc = "load your progress from a previous save, you'll lose unsaved changes",
+            func = function()
+                load_game()
+            end
+        },
         {
             title = "options",
             desc = "show gameplay options",
@@ -234,6 +255,9 @@ menus = {
         }
     }
 }
+
+alert = nil
+alert_time = 0
 
 active_menu = nil
 menu_choice = 1
@@ -495,9 +519,31 @@ function set_notice(text, length)
     notice = text
     noticetime = time() + length
 end
+
+function setalert(text)
+    alert = text
+    alert_time = time()
+end
+
+function save_game()
+    setalert("not implemented yet")
+end
+
+function load_game()
+    setalert("not implemented yet")
+end
 -->8
+function draw_alert()
+    if alert then --extra safety
+        printw(alert, 0, 0, 7, screen_width)
+        if time() - alert_time > 1 then
+            print("❎", screen_width - 7, screen_height - 5, 7)
+        end
+    end
+end
+
 function draw_menu()
-    print("❎: select, 🅾️: exit", 0,0,7)
+    print("❎: select, 🅾️: exit", 0, 0, 7)
     for i = 1, #menus[active_menu] do
         local m = menus[active_menu][i]
         if m.title then

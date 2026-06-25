@@ -272,6 +272,12 @@ lastshot = 0
 notice = nil
 noticetime = 0
 
+tip = nil
+tiptime = 0
+tips = {
+    {text = "tip: you can either fire a shot to enable aiming or do it in the options menu (press 🅾️ while standing)."}
+}
+
 button_notice = nil
 
 active_mission = nil
@@ -290,7 +296,7 @@ face = {
     generic_workman = 230,
     sloppy = 198,
     shakira = 200,
-    sonny = 202,
+    sonny = 202
 }
 
 missions = {
@@ -310,6 +316,7 @@ missions = {
         },
         on_start = function()
             set_notice("slippy is infiltrating the citizens, find him and kill him! +120●")
+            set_tip(1)
             player.ammo += 120
             spawn_npc("slippy")
         end,
@@ -350,7 +357,7 @@ missions = {
             return true
         end,
         on_end = function()
-            set_notice("find the closedai HQ to proceed!")
+            set_notice("find the closedai hq to proceed!")
         end
     },
     {
@@ -383,7 +390,7 @@ missions = {
         x = 8 * 2, y = 8 * 2, sprite = 56, name = "sloppy", missions_needed = { 3 },
         convo = {
             { 198, "hey..." },
-            { 192, "yo? what's up with your face? why the fuck is the whole city filled with robots now?" },
+            { 192, "yo? what are you doing near my house? and what's up with your face? why the fuck is the whole city filled with robots now?" },
             { 198, "it's a long story... why do you care?" },
             { 192, "*mumbles* well i bet it's related to closedai..." },
             { 198, "wait, what did you say? closedai? what do you know about it?" },
@@ -419,15 +426,15 @@ missions = {
     {
         x = 8 * 6, y = 8 * 2, sprite = 57, name = "aunty shakira",
         convo = {
-            {face.shakira, "yo jeremy!"},
-            {face.jeremy, "wassup auntie?"},
-            {face.shakira, "where the hell is your uncle? i'm waiting for these fuckass eggs to show up so i can cook lunch!"},
-            {face.jeremy, "i don't know where the hell uncle sonny is, but i'm sure he's somewhere in the city. i will look for him."},
-            {face.shakira, "you sure? he's probably at the store at the bottom right of the city. you better hurry your asses up!"},
-            {face.jeremy, "wassup with you auntie? calm down!"},
-            {face.shakira, "you lucky your atitude reminds me of your late mother, otherwise i would've punched the bitch out of you!"},
-            {face.jeremy, "ah, i miss my parents. may they rest in peace. i'll look for sonny."},
-            {face.shakira, "ok honey, take care."}
+            { face.shakira, "yo jeremy!" },
+            { face.jeremy, "wassup auntie?" },
+            { face.shakira, "where the hell is your uncle? i'm waiting for these fuckass eggs to show up so i can cook lunch!" },
+            { face.jeremy, "i don't know where the hell uncle sonny is, but i'm sure he's somewhere in the city. i will look for him." },
+            { face.shakira, "you sure? he's probably at the store at the bottom right of the city. you better hurry your asses up!" },
+            { face.jeremy, "wassup with you auntie? calm down!" },
+            { face.shakira, "you lucky your atitude reminds me of your late mother, otherwise i would've punched the bitch out of you!" },
+            { face.jeremy, "ah, i miss my parents. may they rest in peace. i'll look for sonny." },
+            { face.shakira, "ok honey, take care." }
         },
         to_end = function()
             return true
@@ -439,28 +446,29 @@ missions = {
     {
         x = 8 * 24, y = 8 * 27, sprite = 58, name = "uncle sonny", missions_needed = { 5 },
         convo = {
-            {face.jeremy, "hey uncle sonny! come on let's go home, shakira is waiting for us!"},
-            {face.sonny, "not now jeremy... there's something i need to do first, it is a need..."},
-            {face.jeremy, "aw hell nah, i bet you're gonna go kill someone right? please don't get back to your old ways uncle sonny!"},
-            {face.sonny, "listen jeremy, you're like my son now. ever since your parents died and we took you, i've grown a great sense of responsibility for you. and now here you are, understanding me when i want to kill someone or not, like a true son."},
-            {face.jeremy, "thanks uncle sonny, i appreciate that. but please don't kill anyone..."},
-            {face.sonny, "my dear son, let me explain at least. you know that with great power-"},
-            {face.jeremy, "comes great responsibility?"},
-            {face.sonny, "no jeremy. with great power come great haters. i just posted a story on instameter, i got 200 views, but i only got 199 likes."},
-            {face.jeremy, "so? please don't tell me what i'm fearing..."},
-            {face.sonny, "i'm sorry son, but it has to be done. this bitchass hater declared war. he'll get what he fucking deserves... but don't worry, i'm not gonna kill him."},
-            {face.jeremy, "thank god-"},
-            {face.sonny, "you are."},
-            {face.jeremy, "ah fuck!"},
-            {face.sonny, "i'm not getting those eggs home until you kill him!"},
-            {face.sonny, "what do you prefer, jeremy? killing someone or getting your aunt mad? you know that she'll kill us both."},
-            {face.jeremy, "alright, jeez. how does he look?"},
-            {face.sonny, "he's wearing a white shirt, dark skin, has blue eyes and red hair for some fucking reason. how the fuck is a red-haired person allowed to hate on me?"}
+            { face.jeremy, "hey uncle sonny! come on let's go home, shakira is waiting for us!" },
+            { face.sonny, "not now jeremy... there's something i need to do first, it is a need..." },
+            { face.jeremy, "aw hell nah, i bet you're gonna go kill someone right? please don't get back to your old ways uncle sonny!" },
+            { face.sonny, "listen jeremy, you're like my son now. ever since your parents died and we took you, i've grown a great sense of responsibility for you. and now here you are, understanding me when i want to kill someone or not, like a true son." },
+            { face.jeremy, "thanks uncle sonny, i appreciate that. but please don't kill anyone..." },
+            { face.sonny, "my dear son, let me explain at least. you know that with great power-" },
+            { face.jeremy, "comes great responsibility?" },
+            { face.sonny, "no jeremy. with great power come great haters. i just posted a story on instameter, i got 200 views, but i only got 199 likes." },
+            { face.jeremy, "so? please don't tell me what i'm fearing..." },
+            { face.sonny, "i'm sorry son, but it has to be done. this bitchass hater declared war. he'll get what he fucking deserves... but don't worry, i'm not gonna kill him." },
+            { face.jeremy, "thank god-" },
+            { face.sonny, "you are." },
+            { face.jeremy, "ah fuck!" },
+            { face.sonny, "i'm not getting those eggs home until you kill him!" },
+            { face.sonny, "what do you prefer, jeremy? killing someone or getting your aunt mad? you know that she'll kill us both." },
+            { face.jeremy, "alright, jeez. how does he look?" },
+            { face.sonny, "he's wearing a white shirt, dark skin, has blue eyes and red hair for some fucking reason. how the fuck is a red-haired person allowed to hate on me?" }
         },
         on_start = function()
             set_notice("find the hater, and bring justice to sonny! +120●")
+            set_tip(1)
             player.ammo += 120
-            spawn_npc("hater", {8, 4, 12, 7})
+            spawn_npc("hater", { 8, 4, 12, 7 })
         end,
         to_end = function()
             for i = 1, #npcs do
@@ -592,6 +600,12 @@ function set_notice(text, length)
     length = length or 3
     notice = text
     noticetime = time() + length
+end
+
+function set_tip(text, length)
+    length = length or 5
+    tip = text
+    tiptime = time() + length
 end
 
 function setalert(text)
@@ -1073,14 +1087,6 @@ function move_player()
     end
 end
 
-function show_stats()
-    rect(1, screen_height - 8, screen_width - 2, screen_height - 2, 7)
-    rectfill(2, screen_height - 7, screen_width - 3, screen_height - 3, 0)
-    local last_x = print("♥" .. player.health, 1, screen_height - 7, 8)
-    last_x = print("$" .. player.money, last_x + 1, screen_height - 7, 11)
-    print("●" .. player.ammo, last_x + 1, screen_height - 7, 1)
-end
-
 function show_debug()
     print("angle: " .. player.angle, 0, 0, 7)
     print("x: " .. player.x .. "(" .. flr(player.x / 8) .. "*8)")
@@ -1094,6 +1100,14 @@ function show_debug()
     end
 end
 
+function show_stats()
+    rect(1, screen_height - 8, screen_width - 2, screen_height - 2, 7)
+    rectfill(2, screen_height - 7, screen_width - 3, screen_height - 3, 0)
+    local last_x = print("♥" .. player.health, 1, screen_height - 7, 8)
+    last_x = print("$" .. player.money, last_x + 1, screen_height - 7, 11)
+    print("●" .. player.ammo, last_x + 1, screen_height - 7, 1)
+end
+
 function show_notices()
     button_notice = nil
     if mission_id then
@@ -1103,11 +1117,21 @@ function show_notices()
         button_notice = { "❎", "interact" }
     end
     if notice then
-        rect(1, 1, screen_width - 2, 13, 7)
-        rectfill(2, 2, screen_width - 3, 12, 0)
+        local lines = (#notice - 1) \ (screen_width \ 4) + 1
+        rect(1, 1, screen_width - 2, lines * 6 + 1, 1)
+        rectfill(2, 2, screen_width - 3, lines * 6, 0)
         printw(notice, 2, 2, 7, screen_width - 3)
         if time() - noticetime > 0 then
             notice = nil
+        end
+    end
+    if tip and not tips[tip].shown then
+        local lines = (#tips[tip].text - 1) \ (screen_width \ 4) + 1
+        rectfill(1, screen_height - 8 - lines * 6 - 1, screen_width - 2, screen_height - 8 - 1, 8)
+        printw(tips[tip].text, 2, screen_height - 8 - lines * 6, 7, screen_width - 3)
+        if time() - tiptime > 0 then
+            tips[tip].shown = true
+            tip = nil
         end
     end
     if button_notice then
@@ -1141,12 +1165,12 @@ __gfx__
 000000003333333333333333333333333333333333333333099440000044440000044990000000000000000000000000000000000000000000000000bbbb3bbb
 0000000033333333333333333333333333333b333333333300000000000000000000000000000000000000000000000000000000000000000000000000000000
 33333333333333333333333333333333333333333333333300099000000448880009900000000000000000000000000000000000000000000000000000000000
-33333333333333333333333333333333333333333333333300444400084444880044440000000000000000000000000000000000000000000000000000000000
-3333333333333333333333333333333333333333333333330bf4444088ffff8004444fb000000000000000000000000000000000000000000000000000000000
-3333333333333333333333333333333333333333333333330ff44440898ff00004444ff000000000000000000000000000000000000000000000000000000000
-3333b33333333333333333333b333333b333333333333b330ff444408999999004444ff000000000000000000000000000000000000000000000000000000000
-3333333333333333333333333333333333333333333333330bf444408889900004444fb000000000000000000000000000000000000000000000000000000000
-33333333333333333333333333333333333333333333333300444400099999000044440000000000000000000000000000000000000000000000000000000000
+33333333333333333333333333333333333333333333333300444400084444880044440000000000000000000000000000000000000000000000000000555500
+3333333333333333333333333333333333333333333333330bf4444088ffff8004444fb00000000000000000000000000000000000000000000000000555a550
+3333333333333333333333333333333333333333333333330ff44440898ff00004444ff000000000000000000000000000000000000000000000000005555a50
+3333b33333333333333333333b333333b333333333333b330ff444408999999004444ff000000000000000000000000000000000000000000000000005555550
+3333333333333333333333333333333333333333333333330bf444408889900004444fb000000000000000000000000000000000000000000000000005555550
+33333333333333333333333333333333333333333333333300444400099999000044440000000000000000000000000000000000000000000000000000555500
 33333333333333333333333333333333333333333333333300099000000009000009900000000000000000000000000000000000000000000000000000000000
 33333333333333333333333333333333333333333333333300000000000000000000000000000000000000000000000000000000000000000000000000000000
 33333333333333333333333333333333333333333333333309944000004444000004499000000000000000000000000000000000000000000000000000000000
@@ -1158,10 +1182,10 @@ __gfx__
 33333333333333333333333333333333333333333333333300000000000000000000000000000000000000000000000000000000000000000000000000000000
 333333333333333333333333333333333333333333333b330005500000000000000aa00000066000000000000000000000000000000000000000000000000000
 3333333333333333333333333b333333333333333333333300655600008ff8000055550000566500004ff4000000000000000000000000000000000000000000
-3333333333333333333333333333333333333333333333330666666006f55f60055555b00555555006ffff600000000000000000000000000000000000000000
-333333333333333333333333333333333333333333333333c666666cc666566c0e55555085555558566666650000000000000000000000000000000000000000
-333333333333333333333333333333333b33333333333333c666666cc666566c0feeeee085555558566666650000000000000000000000000000000000000000
-3333333333333b333333333333333333333333333333333306ffff60066666600fffff1005444450066666600000000000000000000000000000000000000000
+3333333333333333333333333333333333333333333333330666666006f55f600b5555500555555006ffff600000000000000000000000000000000000000000
+333333333333333333333333333333333333333333333333c666666cc666566c055555e085555558566666650000000000000000000000000000000000000000
+333333333333333333333333333333333b33333333333333c666666cc666566c0eeeeef085555558566666650000000000000000000000000000000000000000
+3333333333333b333333333333333333333333333333333306ffff600666666001fffff005444450066666600000000000000000000000000000000000000000
 333333333333333333333333333333333333333333333333001ff1000066660000ffff0000144100006666000000000000000000000000000000000000000000
 3333333333333333333333333333333333333333333333330000000000000000000aa00000000000000000000000000000000000000000000000000000000000
 55555555555555555555555500000000555555555555555550000000000000055077077077077075500000000000000500000000000000000000000000000000
@@ -1265,8 +1289,8 @@ __gff__
 8080808080808080800606068080808080808080808080008006040680808080808080808080808080060606000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0203049783948184606180918091809180918091606104050203606102030405000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-12868783949492956061a0a2a0a2a0a2a0a2a0a2606114150405606112131415000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-22a6a7a3a4a53025464742424242424258424242666730251415484922238184000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+12010383949492956061a0a2a0a2a0a2a0a2a0a2606114150405606112131415000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+220303a3a4a53025464742424242424258424242666730251415484922238184000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 3233341415010202565752525252525259525252767730352425606181848484000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 809191919104131348490405020304050203042425308c8d8e8f606182848484000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 a0a1a1a1a223313360619715121314151213143435309c9d9e9f606192858595000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -275,7 +275,7 @@ noticetime = 0
 tip = nil
 tiptime = 0
 tips = {
-    {text = "tip: you can either fire a shot to enable aiming or do it in the options menu (press 🅾️ while standing)."}
+    { text = "tip: you can either fire a shot to enable aiming or do it in the options menu (press 🅾️ while standing)." }
 }
 
 button_notice = nil
@@ -344,6 +344,24 @@ missions = {
             { 192, "what the hell is wrong with you, ken-lee?" },
             { 194, "i am a man of honor, i will not." },
             { 224, "shut the fuck up! (punches ken-lee in the face)" },
+            {
+                nil, nil,
+                function()
+                    if not stamp then
+                        stamp = time()
+                        sfx(0)
+                    end
+                    if time() - stamp < 1 then
+                        if time() % 0.2 < 0.1 then
+                            rectfill(0, 0, screen_width, screen_height, 0)
+                        else
+                            rectfill(0, 0, screen_width, screen_height, 7)
+                        end
+                    else
+                        convo_i += 1
+                    end
+                end
+            },
             { 226, "(ken-lee's face breaks and reveals a motherboard)" },
             { 192, "what the fuck? ken-lee you a robot?" },
             { 226, "sorry, as an ai agent, i cannot fullfill your request." },
@@ -357,7 +375,7 @@ missions = {
             return true
         end,
         on_end = function()
-            set_notice("find the closedai hq to proceed!")
+            set_notice("find the closedai headquarters to proceed!")
         end
     },
     {
@@ -387,7 +405,7 @@ missions = {
         end
     },
     {
-        x = 8 * 2, y = 8 * 2, sprite = 56, name = "sloppy", missions_needed = { 3 },
+        x = 8 * 2, y = 8 * 2, sprite = 56, name = "sloppy", missions_needed = { 3, 7 },
         convo = {
             { 198, "hey..." },
             { 192, "yo? what are you doing near my house? and what's up with your face? why the fuck is the whole city filled with robots now?" },
@@ -480,6 +498,24 @@ missions = {
         end,
         on_end = function()
             set_notice("mission complete!")
+        end
+    },
+    {
+        x = 8 * 1, y = 8 * 1, sprite = 58, name = "who's boss", missions_needed = { 6 },
+        convo = {
+            { face.jeremy, "shit was done uncle sonny." },
+            { face.sonny, "well done, son. These haters think they're just-" },
+            { nil, nil, function() rectfill(0, 0, screen_width, screen_height, 12) print("invincible", screen_width / 2 - 4 * 5, screen_height / 2 - 2, 10) end },
+            { face.jeremy, "alright unc, call me when you need me." },
+            { face.sonny, "ok son, here's a 100 bucks. go get something nice for yourself." },
+            { face.jeremy, "yoo thanks a lot uncle." }
+        },
+        to_end = function()
+            return true
+        end,
+        on_end = function()
+            set_notice("+100$")
+            player.money += 100
         end
     }
 }
@@ -1149,10 +1185,14 @@ end
 
 function draw_convo()
     local t = missions[convo_mission_id].convo[convo_i]
-    rectfill(0, 0, screen_width, screen_height, 0)
-    printw(t[2], 0, 0, 7, screen_width)
-    spr(t[1], screen_width - 16, screen_height - 16, 2, 2)
-    print("❎", screen_width - 16 - 8, screen_height - 5, 7)
+    if t[3] then
+        t[3]()
+    else
+        rectfill(0, 0, screen_width, screen_height, 0)
+        printw(t[2], 0, 0, 7, screen_width)
+        spr(t[1], screen_width - 16, screen_height - 16, 2, 2)
+        print("❎", screen_width - 16 - 8, screen_height - 5, 7)
+    end
 end
 
 __gfx__

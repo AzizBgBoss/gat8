@@ -188,6 +188,7 @@ function _draw()
 end
 
 -->8
+version = "0.1alpha"
 map_width, map_height = 32, 32
 screen_width, screen_height = 128, 128
 tile_size = 8
@@ -703,7 +704,7 @@ function draw_title()
             draw = function(diff)
                 print("gat 8", 0, 0, 10)
                 print("gat 8", 1, 1, 9)
-                print("made by azizbgboss", 0, 8, 7)
+                print("made by azizbgboss - version" .. version, 0, 8, 7)
                 printw("github.com/azizbgboss/gat8", 0, 16, 7)
                 print("press ❎ to start", 0, 120, 7)
             end

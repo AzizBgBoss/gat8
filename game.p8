@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 function _init()
-    for i = 1, 4 do
+    for i = 1, 16 do
         spawn_npc()
     end
     cartdata("gat8azizbgboss")
@@ -45,6 +45,8 @@ function _update60()
             active_menu = nil
             sfx(1)
         end
+    elseif updateOverride then
+        updateOverride()
     else
         local started_mission = false
         if not convo_active then
@@ -134,6 +136,7 @@ function _update60()
                         for i = 1, #npcs do
                             if isinrange(npcs[i].x + 4, npcs[i].y + 4, 10) then
                                 npcs[i].scared = time()
+                                npcs[i].target = nil
                             end
                         end
                     end
@@ -487,7 +490,7 @@ missions = {
             set_notice("find the hater, and bring justice to sonny! +120●")
             set_tip(1)
             player.ammo += 120
-            spawn_npc("hater", { 8, 4, 12, 7 })
+            spawn_npc("hater", { 8, 4, 12, 7 }, true)
         end,
         to_end = function()
             for i = 1, #npcs do
@@ -704,8 +707,9 @@ function draw_title()
             draw = function(diff)
                 print("gat 8", 0, 0, 10)
                 print("gat 8", 1, 1, 9)
-                print("made by azizbgboss - version" .. version, 0, 8, 7)
+                print("made by azizbgboss", 0, 8, 7)
                 printw("github.com/azizbgboss/gat8", 0, 16, 7)
+                printw("version " .. version, 0, 64, 7)
                 print("press ❎ to start", 0, 120, 7)
             end
         }
@@ -750,6 +754,12 @@ end
 
 function check_missions()
     if active_mission then
+        if missions[active_mission].update then
+            missions[active_mission].update()
+        end
+        if missions[active_mission].updateOverride then
+            updateOverride = missions[active_mission].updateOverride
+        end
         if missions[active_mission].to_end() or missions[active_mission].complete then
             missions[active_mission].complete = true
             if missions[active_mission].on_end then
@@ -834,18 +844,19 @@ function draw_items()
     end
 end
 
-function spawn_npc(name, pal, x, y, dir, health, speed)
+function spawn_npc(name, pal, violent, x, y, dir, health, speed)
     while not x or not y do
         local testx, testy = rand(map_width), rand(map_height)
         if is_legal(testx, testy) then
             x, y = testx * tile_size, testy * tile_size
         end
     end
+    violent = violent or rand(3) == 1
     pal = pal or { npc_palette[1][2][rand(#npc_palette[1][2]) + 1], npc_palette[2][2][rand(#npc_palette[2][2]) + 1], npc_palette[3][2][rand(#npc_palette[3][2]) + 1], npc_palette[4][2][rand(#npc_palette[4][2]) + 1] }
     dir = dir or rand(8)
     health = health or 20
     speed = speed or 0.3
-    add(npcs, { x = x, y = y, sprite = sprite, dir = rand(8), health = health, speed = speed, name = name, pal = pal })
+    add(npcs, { x = x, y = y, sprite = sprite, dir = rand(8), health = health, speed = speed, name = name, pal = pal, violent = violent })
 end
 
 function iswet(x, y)
@@ -907,7 +918,7 @@ function move_npcs()
         local n = npcs[i]
 
         if n.health > 0 then
-            if n.scared then
+            if n.scared and not n.violent then
                 if time() - n.scared > 10 then
                     n.speed = 0.2
                     n.scared = nil
@@ -953,14 +964,25 @@ function move_npcs()
                             end
                         end
                     end
-                elseif rand(300) == 0 then
-                    n.target = {}
-                    n.target[1], n.target[2] = rand(map_width), rand(map_height)
-                    while not is_legal(n.target[1], n.target[2]) do
-                        n.target[1], n.target[2] = rand(map_width), rand(map_height)
+                else
+                    n.target = nil
+                    if n.violent then
+                        if rand(120) == 1 then
+                            if not isinrange(n.x + 4, n.y + 4, 5) then
+                                n.target = { player.x \ tile_size, player.y \ tile_size }
+                            end
+                        end
+                    elseif rand(120) == 1 then
+                        n.target = { rand(map_width), rand(map_height) }
+                        while not is_legal(n.target[1], n.target[2]) do
+                            n.target[1], n.target[2] = rand(map_width), rand(map_height)
+                        end
                     end
-                    n.next_step = {}
-                    n.next_step[1], n.next_step[2] = get_next_step(flr((n.x + 4) / tile_size), flr((n.y + 4) / tile_size), n.target[1], n.target[2])
+                    n.next_step = nil
+                    if n.target then
+                        n.next_step = {}
+                        n.next_step[1], n.next_step[2] = get_next_step(flr((n.x + 4) / tile_size), flr((n.y + 4) / tile_size), n.target[1], n.target[2])
+                    end
                 end
             end
             if n.lastshot then
@@ -990,8 +1012,8 @@ function move_npcs()
 end
 
 function add_particle(x, y, color, velx, vely)
-    velx = velx or rnd(1)
-    vely = vely or rnd(1)
+    velx = velx or (rnd(2) - 1)
+    vely = vely or (rnd(2) - 1)
     add(particles, { x = x, y = y, color = color, velx = velx, vely = vely, time = time(), slowdown = 0.9 })
 end
 
@@ -1002,7 +1024,7 @@ function move_particles()
         p.y += p.vely
         p.velx *= p.slowdown
         p.vely *= p.slowdown
-        if p.x < 0 or p.x > map_width * tile_size or p.y < 0 or p.y > map_height * tile_size then
+        if p.x < 0 or p.x > map_width * tile_size or p.y < 0 or p.y > map_height * tile_size or issolid(p.x \ tile_size, p.y \ tile_size) then
             deli(particles, i)
         end
         if time() - p.time > 5 then
